@@ -7,7 +7,7 @@ const Redis = require("ioredis");
 const { url } = require("inspector");
 require("dotenv").config();
 
-const publisher = new Redis(process.env.REDIS_AIVEN_URL);
+const publisher = new Redis(process.env.REDIS_URL);
 
 const s3Client = new S3Client({
   region: "us-west-1",

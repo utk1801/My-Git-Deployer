@@ -9,7 +9,7 @@ const cors = require("cors");
 const app = express();
 const PORT = 9000;
 let projectSlug = "undefined";
-const redisUrl = process.env.REDIS_AIVEN_URL;
+const redisUrl = process.env.REDIS_URL;
 
 const subscriber = new Redis(redisUrl);
 
@@ -32,8 +32,8 @@ app.post("/project", async (req, res) => {
   projectSlug = slug ? slug : generateSlug();
   console.log(`Using project slug as ${projectSlug}`);
 
-  const accessKeyId = process.env.ACCESS_KEY_ID;
-  const secretAccessKey = process.env.SECRET_ACCESS_KEY;
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
   const dockerImageName = process.env.DOCKER_IMAGE;
 
   console.log(`${accessKeyId}_${secretAccessKey}_${dockerImageName}`);
@@ -77,7 +77,7 @@ async function runDockerImageAsync(
     "-e",
     `AWS_SECRET_ACCESS_KEY=${secretAccessKey}`,
     "-e",
-    `REDIS_AIVEN_URL=${redisUrl}`,
+    `REDIS_URL=${redisUrl}`,
     dockerImage,
   ];
 
