@@ -19,7 +19,7 @@ app.use(cors());
 io.on("connection", (socket) => {
   socket.on("subscribe", (channel) => {
     socket.join(channel);
-    socket.emit("message", `Joined ${channel}`);
+    socket.emit("message", `Subscribed to: ${channel}`);
   });
 });
 
