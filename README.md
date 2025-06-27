@@ -26,3 +26,7 @@ At this point following services would be up and running:
 | 4    | `frontend-nextjs`  | `:3000` |
 
 6. Navigate to `http://localhost:3000` to access the application.
+
+### Architecture
+
+![Git Deployer App Architecture](https://github.com/utk1801/My-Git-Deployer/blob/main/architecture.png?raw=true)
