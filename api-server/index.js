@@ -1,25 +1,29 @@
 const express = require("express");
 const { generateSlug } = require("random-word-slugs");
 const { Server } = require("socket.io");
-// const Redis = require("ioredis");
+const Redis = require("ioredis");
 const { spawn } = require("child_process");
 require("dotenv").config();
+const cors = require("cors");
 
 const app = express();
 const PORT = 9000;
 let projectSlug = "undefined";
-// const subscriber = new Redis("");
+const redisUrl = process.env.REDIS_AIVEN_URL;
 
-// const io = new Server({ cors: '*' })
+const subscriber = new Redis(redisUrl);
 
-// io.on('connection', socket => {
-//     socket.on('subscribe', channel => {
-//         socket.join(channel)
-//         socket.emit('message', `Joined ${channel}`)
-//     })
-// })
+const io = new Server({ cors: "*" });
+app.use(cors());
 
-// io.listen(9002, () => console.log('Socket Server 9002'))
+io.on("connection", (socket) => {
+  socket.on("subscribe", (channel) => {
+    socket.join(channel);
+    socket.emit("message", `Joined ${channel}`);
+  });
+});
+
+io.listen(9002, () => console.log("Socket Server 9002"));
 
 app.use(express.json());
 
@@ -69,16 +73,17 @@ async function runDockerImageAsync(
     "-e",
     `PROJECT_ID=${projectSlug}`,
     "-e",
-    `ACCESS_KEY_ID=${accessKeyId}`,
+    `AWS_ACCESS_KEY_ID=${accessKeyId}`,
     "-e",
-    `SECRET_ACCESS_KEY=${secretAccessKey}`,
+    `AWS_SECRET_ACCESS_KEY=${secretAccessKey}`,
+    "-e",
+    `REDIS_AIVEN_URL=${redisUrl}`,
     dockerImage,
   ];
 
   console.log(`Attempting to run Docker image: ${dockerImage}`);
 
   const dockerProcess = spawn("docker", dockerArgs);
-  console.log(`Docker args: ${dockerArgs}`);
 
   dockerProcess.stdout.on("data", (data) => {
     console.log(`Docker stdout: ${data}`);
@@ -111,6 +116,6 @@ async function initRedisSubscribe() {
   });
 }
 
-// initRedisSubscribe();
+initRedisSubscribe();
 
 app.listen(PORT, () => console.log(`API Server Running..${PORT}`));

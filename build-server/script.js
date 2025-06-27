@@ -3,16 +3,17 @@ const path = require("path");
 const fs = require("fs");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const mime = require("mime-types");
-// const Redis = require("ioredis");
+const Redis = require("ioredis");
+const { url } = require("inspector");
 require("dotenv").config();
 
-// const publisher = new Redis("");
+const publisher = new Redis(process.env.REDIS_AIVEN_URL);
 
 const s3Client = new S3Client({
   region: "us-west-1",
   credentials: {
-    accessKeyId: process.env.ACCESS_KEY_ID,
-    secretAccessKey: process.env.SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
@@ -20,43 +21,43 @@ const PROJECT_ID = process.env.PROJECT_ID; //import value from inside docker con
 
 init(PROJECT_ID);
 
-// function publishLog(log) {
-//   publisher.publish(`logs:${PROJECT_ID}`, JSON.stringify({ log }));
-// }
+function publishLog(log) {
+  publisher.publish(`logs:${PROJECT_ID}`, JSON.stringify({ log }));
+}
 
 async function init(projectId) {
   console.log("Executing script.js");
   console.log(`SLUG_NAME from api server: ${projectId}`);
-  //   publishLog("Build Started...");
+  publishLog("Build Started...");
   const outDirPath = path.join(__dirname, "output");
 
   const p = exec(`cd ${outDirPath} && npm install && npm run build`);
 
   p.stdout.on("data", function (data) {
     console.log(data.toString());
-    // publishLog(data.toString());
+    publishLog(data.toString());
   });
 
   p.stderr.on("error", function (data) {
     console.log("Error", data.toString());
-    // publishLog(`error: ${data.toString()}`);
+    publishLog(`error: ${data.toString()}`);
   });
 
   p.on("close", async function () {
     console.log("Build Complete");
-    // publishLog(`Build Complete`);
+    publishLog(`Build Complete`);
     const distFolderPath = path.join(__dirname, "output", "dist");
     const distFolderContents = fs.readdirSync(distFolderPath, {
       recursive: true,
     });
 
-    // publishLog(`Starting to upload`);
+    publishLog(`Starting to upload`);
     for (const file of distFolderContents) {
       const filePath = path.join(distFolderPath, file);
       if (fs.lstatSync(filePath).isDirectory()) continue;
 
       console.log("uploading", filePath);
-      //   publishLog(`uploading ${file}`);
+      publishLog(`uploading ${file}`);
 
       const command = new PutObjectCommand({
         Bucket: "vercel-git-builder-files",
@@ -66,10 +67,13 @@ async function init(projectId) {
       });
 
       await s3Client.send(command);
-      //   publishLog(`uploaded ${file}`);
+      publishLog(`uploaded ${file}`);
       console.log("uploaded", filePath);
     }
-    // publishLog(`Done`);
+    publishLog(
+      `Done.. You may now view the deployed GIT project at above mentioned URL}`
+    );
     console.log("Done...");
+    process.exit(0);
   });
 }
